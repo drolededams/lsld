@@ -22,22 +22,33 @@ def get_data(args):
 
 if __name__ == '__main__':
     df = get_data(sys.argv)
-    # houses = df['Hogwarts House'].unique().tolist()
-    # for house in houses:
-    #     grade = df.loc[df['Hogwarts House'] == house, 'Herbology'].dropna()
-    #     plt.hist(grade, alpha=0.5, label=house)
-    # plt.legend(loc='upper right')
+    houses = df['Hogwarts House'].unique().tolist()
+    print(houses)
+# Create a histogram. replace Herbology by good subject
+    for house in houses:
+        grade = df.loc[df['Hogwarts House'] == house, 'Arithmancy'].dropna()
+        plt.hist(grade, alpha=0.5, label=house)
+    plt.legend(loc='upper right')
+    plt.show()
+# Create a boxplot as bonus
+    # plt.figure(1)
+    # df.boxplot('Arithmancy', by='Hogwarts House', figsize=(12, 8))
+    # plt.figure(2)
+    # df.boxplot('Astronomy', by='Hogwarts House', figsize=(12, 8))
     # plt.show()
-#Create a boxplot
-    # df.boxplot('Herbology', by='Hogwarts House', figsize=(12, 8))
-    # ctrl = df['Herbology'][df['Hogwarts House'] == 'Hufflepuff']
-    # grps = df['Hogwarts House'].unique()
-    # d_data = {grp:df['Herbology'][df['Hogwarts House'] == grp] for grp in grps}
-    # k = len(pd.unique(df['Hogwarts House']))  # number of conditions
-    # N = len(df.values)  # conditions times participants
-    # n = df.groupby('Hogwarts House').size()[0] #Participants in each condition
-    # plt.show()
-    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Herbology'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Herbology'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Herbology'].dropna())) 
-    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Arithmancy'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Arithmancy'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Arithmancy'].dropna())) 
-    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Astronomy'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Astronomy'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Astronomy'].dropna())) 
-    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Defense Against the Dark Arts'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Defense Against the Dark Arts'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Defense Against the Dark Arts'].dropna())) 
+
+
+    '''
+        to do : 
+            - understand ANOVA
+            - find selection criteria
+            - list of subjects (Arithmancy, Herbology, etc...)
+            - loop stats.f_oneway
+            - selection
+            - plot hist
+            - bonus : plot boxplot
+    '''
+    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Herbology'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Herbology'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Herbology'].dropna()))
+    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Arithmancy'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Arithmancy'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Arithmancy'].dropna()))
+    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Astronomy'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Astronomy'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Astronomy'].dropna()))
+    print(stats.f_oneway(df.loc[df['Hogwarts House'] == 'Hufflepuff', 'Defense Against the Dark Arts'].dropna(), df.loc[df['Hogwarts House'] == 'Gryffindor', 'Defense Against the Dark Arts'].dropna(), df.loc[df['Hogwarts House'] == 'Slytherin', 'Defense Against the Dark Arts'].dropna()))

@@ -2,7 +2,6 @@ import sys
 import math
 import numpy as np
 import pandas as pd
-import pprint
 
 
 def get_data(args):
@@ -13,12 +12,16 @@ def get_data(args):
         file = args[1]
     try:
         data = pd.read_csv(file)
-        # data = np.genfromtxt(file, delimiter=",", names=True)
     except Exception as e:
         print("Can't extract data from {}.".format(file))
         print(e.__doc__)
         sys.exit(0)
     return data
+
+
+def percentile(percent, count, values):
+    x = percent * (count - 1)
+    return values[math.floor(x)] + (values[math.floor(x) + 1] - values[math.floor(x)]) * (x % 1)
 
 
 def describe(data):
@@ -30,16 +33,14 @@ def describe(data):
     stats['var'] = 1 / (count - 1) * np.sum(np.power(np.subtract(values, stats['mean']), 2))
     stats['std'] = np.sqrt(stats['var'])
     stats['min'] = values[0]
-    x = 0.25 * (count - 1)
-    stats['25%'] = values[math.floor(x)] + (values[math.floor(x) + 1] - values[math.floor(x)]) * (x % 1)
+    stats['max'] = values[count - 1]
+    stats['range'] = stats['max'] - stats['min']
+    stats['25%'] = percentile(0.25, count, values)
+    stats['75%'] = percentile(0.75, count, values)
     if count % 2 == 0:
         stats['50%'] = (values[int(count / 2 - 1)] + values[int(count / 2)]) / 2
     else:
         stats['50%'] = values[int((count + 1) / 2 - 1)]
-    x = 0.75 * (count - 1)
-    stats['75%'] = values[math.floor(x)] + (values[math.floor(x) + 1] - values[math.floor(x)]) * (x % 1)
-    stats['max'] = values[count - 1]
-    stats['range'] = stats['max'] - stats['min']
     return stats
 
 
