@@ -98,12 +98,12 @@ def gradient_descent(x, y, house):
     tmp_cost = 0
     new_cost = 0
     costs = []
-    tmp_cost = float(cost(theta, xScaled, y_class)[0])
+    tmp_cost = float(cost(theta, x, y_class)[0])
     costs.append(tmp_cost)
     while converge > 0.0001:
         tmp_theta = theta
-        theta = theta_calc(tmp_theta, xScaled, y_class, lRate)
-        new_cost = float(cost(theta, xScaled, y_class)[0])
+        theta = theta_calc(tmp_theta, x, y_class, lRate)
+        new_cost = float(cost(theta, x, y_class)[0])
         costs.append(new_cost)
         converge = np.abs(tmp_cost - new_cost)
         tmp_cost = new_cost
@@ -120,13 +120,13 @@ def display_results(results, house):
         print(house + "'s results:")
         print("finals thetas= ", results[house]['theta'])
         print("turns = ", results[house]['turn'])
-        # plt.figure(i)
-        # plt.xlabel('No. of iterations')
-        # plt.ylabel('Cost Function')
-        # plt.title(house + "'s Cost Function Evolution")
-        # plt.plot(np.arange(results[house]['turn'] + 1), results[house]['costs'])
+        plt.figure(i)
+        plt.xlabel('No. of iterations')
+        plt.ylabel('Cost Function')
+        plt.title(house + "'s Cost Function Evolution")
+        plt.plot(np.arange(results[house]['turn'] + 1), results[house]['costs'])
         i += 1
-    #plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     pd.set_option('display.expand_frame_repr', False)
 
     df = get_data(sys.argv)
-    df = df.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures', 'First Name', 'Last Name', 'Birthday', 'Best Hand']) #drpna ? Really ?
+    df = df.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures', 'First Name', 'Last Name', 'Birthday', 'Best Hand'])
     x = df.drop(columns='Hogwarts House')
     x.fillna(x.mean(), inplace=True) # avoir
     x = x.reindex(sorted(x.columns), axis=1)
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     results = {}
     for house in houses:
-        results[house] = gradient_descent(x, y, house)
+        results[house] = gradient_descent(xScaled, y, house)
     display_results(results, houses)
     results_serialization = {}
     for house in houses:
@@ -164,14 +164,4 @@ if __name__ == '__main__':
     std.insert(0, 1)
     results_serialization['mean'] = mean
     results_serialization['std'] = std
-    describe(results_serialization)
-    describe(index)
     pd.DataFrame(results_serialization, index=index).to_csv('weight.csv', index_label='Subject')
-
-
-
-
-
-
-
-

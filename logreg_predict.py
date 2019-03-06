@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import inspect
 import re
+from sklearn.metrics import accuracy_score
 
 
 def describe(arg):
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     np.set_printoptions(threshold=np.inf) 
     pd.set_option('display.expand_frame_repr', False)
     weights = get_data(sys.argv)
-    df = pd.read_csv('resources/dataset_test.csv')
+    df = pd.read_csv('resources/dataset_train.csv')
     thetas = weights.drop(columns=['mean', 'std'])
     houses = list(thetas.columns.values)
     x = df.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures', 'First Name', 'Last Name', 'Birthday', 'Best Hand', 'Hogwarts House'])
@@ -78,9 +79,9 @@ if __name__ == '__main__':
     thetas = thetas.to_numpy()
     results = np.divide(1, np.add(1, np.exp(np.multiply(xScaled.dot(thetas), -1))))
     results = results.argmax(axis=1).tolist()
-    describe(results)
     for index, v in enumerate(results):
         results[index] = houses[v]
-    describe(results)
-    df = pd.DataFrame(data={"Hogwarts House": results}, index_col='Index')
-    df.to_csv("./houses.csv", sep=',')
+    df = pd.DataFrame(data={"Index": list(range(0, len(results))), "Hogwarts House": results})
+    df.to_csv("./houses.csv", sep=',', index=False)
+    df = pd.read_csv('resources/dataset_train.csv')
+    print(accuracy_score(df['Hogwarts House'].tolist(), results))
