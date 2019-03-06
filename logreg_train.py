@@ -2,7 +2,6 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn import preprocessing
 import inspect
 import re
 
@@ -54,12 +53,28 @@ def get_data(args):
     return data
 
 
-def df_classification(df, house):
+def y_classification(df, house):
     df_copy = df.copy()
     df_copy['Hogwarts House'] = np.where(df_copy['Hogwarts House'] == house, 1, 0)
-    df_copy = df_copy.select_dtypes('number')
-    df_copy = df_copy.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures']).dropna() #drpna ? Really ?
-    return df_copy
+    y_class = df_copy['Hogwarts House'].to_numpy()
+    y_class = np.reshape(y_class, (1, np.size(y_class)))
+    return y_class
+
+
+def preprocessing_feature_scaling(data):
+    clean_data = {k: data[k] for k in data if not np.isnan(data[k])}
+    values = np.sort(np.array(list(clean_data.values()), dtype=object))
+    count = len(clean_data)
+    stats = {'mean': sum(clean_data.values()) / count}
+    stats['var'] = 1 / (count - 1) * np.sum(np.power(np.subtract(values, stats['mean']), 2))
+    stats['std'] = np.sqrt(stats['var'])
+    return stats
+
+
+def feature_scaling(x, stats):
+    for subject in stats:
+        x[subject] = np.divide(np.subtract(x[subject], stats[subject]['mean']), stats[subject]['std'])
+    return x
 
 
 def theta_calc(theta, xScaled, y_class, lRate):
@@ -71,24 +86,11 @@ def theta_calc(theta, xScaled, y_class, lRate):
 def cost(theta, xScaled, y_class):
     hypothesis = np.divide(1, np.add(1, np.exp(np.multiply(np.dot(theta, np.transpose(xScaled)), -1))))
     size = np.size(xScaled, 0)
-    #return np.dot(y_class, np.transpose(np.log(hypothesis)))
     return (1 / size) * np.subtract(np.multiply(-1, np.dot(y_class, np.transpose(np.log(hypothesis)))), np.dot(np.subtract(1, y_class), np.transpose(np.log(np.subtract(1, hypothesis)))))
 
 
-if __name__ == '__main__':
-    np.set_printoptions(threshold=np.inf) 
-    pd.set_option('display.expand_frame_repr', False)
-    df = get_data(sys.argv)
-    df_raven = df_classification(df, 'Ravenclaw')
-    y_class = df_raven['Hogwarts House'].to_numpy()
-    y_class = np.reshape(y_class, (1, np.size(y_class)))
-    x = df_raven.drop(columns='Hogwarts House')
-    names = x.columns
-    scaler = preprocessing.StandardScaler()
-    xScaled = scaler.fit_transform(x)
-    xScaled = pd.DataFrame(xScaled, columns=names)
-    xScaled = xScaled.to_numpy()
-    xScaled = np.insert(xScaled, 0, 1.0, axis=1)
+def gradient_descent(x, y, house):
+    y_class = y_classification(y, house)
     theta = np.zeros((1, 11))
     converge = 10000000
     lRate = 1
@@ -106,11 +108,70 @@ if __name__ == '__main__':
         converge = np.abs(tmp_cost - new_cost)
         tmp_cost = new_cost
         turn += 1
-    print("theta final = ", theta)
-    print("turn = ", turn)
-    plt.figure(1)
-    plt.xlabel('No. of iterations')
-    plt.ylabel('Cost Function')
-    plt.title('Data Visualization')
-    plt.plot(np.arange(turn + 1), costs)
-    plt.show()
+    results = {'theta': theta}
+    results['turn'] = turn
+    results['costs'] = costs
+    return results
+
+
+def display_results(results, house):
+    i = 1
+    for house in houses:
+        print(house + "'s results:")
+        print("finals thetas= ", results[house]['theta'])
+        print("turns = ", results[house]['turn'])
+        # plt.figure(i)
+        # plt.xlabel('No. of iterations')
+        # plt.ylabel('Cost Function')
+        # plt.title(house + "'s Cost Function Evolution")
+        # plt.plot(np.arange(results[house]['turn'] + 1), results[house]['costs'])
+        i += 1
+    #plt.show()
+
+
+if __name__ == '__main__':
+    np.set_printoptions(threshold=np.inf) 
+    pd.set_option('display.expand_frame_repr', False)
+
+    df = get_data(sys.argv)
+    df = df.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures', 'First Name', 'Last Name', 'Birthday', 'Best Hand']) #drpna ? Really ?
+    x = df.drop(columns='Hogwarts House')
+    x.fillna(x.mean(), inplace=True) # avoir
+    x = x.reindex(sorted(x.columns), axis=1)
+    index = list(x.columns.values)
+    index.insert(0, 'Theta 0')
+    y = df[['Hogwarts House']]
+    houses = df['Hogwarts House'].unique().tolist()
+    dd = x.to_dict()
+    stats = {column: preprocessing_feature_scaling(sub_dict) for column, sub_dict in dd.items()}
+    xScaled = feature_scaling(x, stats)
+    xScaled = xScaled.to_numpy()
+    xScaled = np.insert(xScaled, 0, 1.0, axis=1)
+
+    results = {}
+    for house in houses:
+        results[house] = gradient_descent(x, y, house)
+    display_results(results, houses)
+    results_serialization = {}
+    for house in houses:
+        results_serialization[house] = results[house]['theta'].tolist()[0]
+    mean = list()
+    std = list()
+    for subject in stats:
+        mean.append(stats[subject]['mean'])
+        std.append(stats[subject]['std'])
+    mean.insert(0, 1)
+    std.insert(0, 1)
+    results_serialization['mean'] = mean
+    results_serialization['std'] = std
+    describe(results_serialization)
+    describe(index)
+    pd.DataFrame(results_serialization, index=index).to_csv('weight.csv', index_label='Subject')
+
+
+
+
+
+
+
+
