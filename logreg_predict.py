@@ -41,35 +41,48 @@ def describe(arg):
 
 
 def get_data(args):
-    file = "data.csv"
-    if len(args) < 2:
-        print("No arguments given. Try with \"data.csv\".")
+    dataset_f = "resources/dataset_test.csv"
+    weights_f = "weights.csv"
+    if len(args) < 3:
+        print("2 arguments needed. Try with \"resources/dataset_test.csv\" and \"weights.csv\".")
     else:
-        file = args[1]
+        dataset_f = args[1]
+        weights_f = args[2]
     try:
-        data = pd.read_csv(file, index_col='Subject')
+        dataset = pd.read_csv(dataset_f)
     except Exception as e:
-        print("Can't extract data from {}.".format(file))
+        print("Can't extract data from {}.".format(dataset_f))
         print(e.__doc__)
         sys.exit(0)
-    return data
+    try:
+        weights = pd.read_csv(weights_f, index_col='Subject')
+    except Exception as e:
+        print("Can't extract data from {}.".format(weights_f))
+        print(e.__doc__)
+        sys.exit(0)
+    return dataset, weights
 
 
 def feature_scaling(x, stats):
     subjects = list(x.columns.values)
-    for subject in subjects:
-        x[subject] = np.divide(np.subtract(x[subject], stats['mean'][subject]), stats['std'][subject])
+    for subj in subjects:
+        x[subj] = (x[subj] - stats['mean'][subj]) / stats['std'][subj]
     return x
 
 
 if __name__ == '__main__':
-    np.set_printoptions(threshold=np.inf) 
-    pd.set_option('display.expand_frame_repr', False)
-    weights = get_data(sys.argv)
-    df = pd.read_csv('resources/dataset_train.csv')
+    #np.set_printoptions(threshold=np.inf) 
+    #pd.set_option('display.expand_frame_repr', False)
+
+    # Get Data
+    dataset, weights = get_data(sys.argv)
+
+    # Data Preprocessing
     thetas = weights.drop(columns=['mean', 'std'])
     houses = list(thetas.columns.values)
-    x = df.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures', 'First Name', 'Last Name', 'Birthday', 'Best Hand', 'Hogwarts House'])
+    x = dataset.drop(columns=[
+        'Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures',
+        'First Name', 'Last Name', 'Birthday', 'Best Hand', 'Hogwarts House'])
     x = x.reindex(sorted(x.columns), axis=1)
     mean = weights.drop('Theta 0')['mean']
     x.fillna(mean, inplace=True)
@@ -77,11 +90,18 @@ if __name__ == '__main__':
     xScaled = xScaled.to_numpy()
     xScaled = np.insert(xScaled, 0, 1.0, axis=1)
     thetas = thetas.to_numpy()
-    results = np.divide(1, np.add(1, np.exp(np.multiply(xScaled.dot(thetas), -1))))
+
+    # Prediction Processing
+    results = 1 / (1 + np.exp(xScaled.dot(thetas) * -1))
     results = results.argmax(axis=1).tolist()
     for index, v in enumerate(results):
         results[index] = houses[v]
-    df = pd.DataFrame(data={"Index": list(range(0, len(results))), "Hogwarts House": results})
+
+    # Results Generation
+    df = pd.DataFrame(data={
+        "Index": list(range(0, len(results))), "Hogwarts House": results})
     df.to_csv("./houses.csv", sep=',', index=False)
-    df = pd.read_csv('resources/dataset_train.csv')
-    print(accuracy_score(df['Hogwarts House'].tolist(), results))
+    print(df, "\nFull results in houses.csv.")
+
+    #df = pd.read_csv('resources/dataset_train.csv')
+    #print(accuracy_score(df['Hogwarts House'].tolist(), results))

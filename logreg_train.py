@@ -39,9 +39,9 @@ def describe(arg):
 
 
 def get_data(args):
-    file = "data.csv"
+    file = "resources/dataset_train.csv"
     if len(args) < 2:
-        print("No arguments given. Try with \"data.csv\".")
+        print("No arguments given. Try with \"resources/dataset_train.csv\".")
     else:
         file = args[1]
     try:
@@ -55,7 +55,8 @@ def get_data(args):
 
 def y_classification(df, house):
     df_copy = df.copy()
-    df_copy['Hogwarts House'] = np.where(df_copy['Hogwarts House'] == house, 1, 0)
+    df_copy['Hogwarts House'] = np.where(
+            df_copy['Hogwarts House'] == house, 1, 0)
     y_class = df_copy['Hogwarts House'].to_numpy()
     y_class = np.reshape(y_class, (1, np.size(y_class)))
     return y_class
@@ -66,27 +67,30 @@ def preprocessing_feature_scaling(data):
     values = np.sort(np.array(list(clean_data.values()), dtype=object))
     count = len(clean_data)
     stats = {'mean': sum(clean_data.values()) / count}
-    stats['var'] = 1 / (count - 1) * np.sum(np.power(np.subtract(values, stats['mean']), 2))
+    stats['var'] = (
+            1 / (count - 1) * np.sum(np.power(values - stats['mean'], 2)))
     stats['std'] = np.sqrt(stats['var'])
     return stats
 
 
 def feature_scaling(x, stats):
-    for subject in stats:
-        x[subject] = np.divide(np.subtract(x[subject], stats[subject]['mean']), stats[subject]['std'])
+    for subj in stats:
+        x[subj] = (x[subj] - stats[subj]['mean']) / stats[subj]['std']
     return x
 
 
 def theta_calc(theta, xScaled, y_class, lRate):
-    hypothesis = np.divide(1, np.add(1, np.exp(np.multiply(np.dot(theta, np.transpose(xScaled)), -1))))
+    hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
     size = np.size(xScaled, 0)
-    return theta - (lRate / size) * np.dot(np.subtract(hypothesis, y_class), xScaled)
+    return theta - (lRate / size) * (hypothesis - y_class).dot(xScaled)
 
 
 def cost(theta, xScaled, y_class):
-    hypothesis = np.divide(1, np.add(1, np.exp(np.multiply(np.dot(theta, np.transpose(xScaled)), -1))))
+    hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
     size = np.size(xScaled, 0)
-    return (1 / size) * np.subtract(np.multiply(-1, np.dot(y_class, np.transpose(np.log(hypothesis)))), np.dot(np.subtract(1, y_class), np.transpose(np.log(np.subtract(1, hypothesis)))))
+    return ((1 / size)
+            * (-1 * y_class.dot(np.transpose(np.log(hypothesis)))
+            - (1 - y_class).dot(np.transpose(np.log(1 - hypothesis)))))
 
 
 def gradient_descent(x, y, house):
@@ -134,7 +138,9 @@ if __name__ == '__main__':
     pd.set_option('display.expand_frame_repr', False)
 
     df = get_data(sys.argv)
-    df = df.drop(columns=['Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures', 'First Name', 'Last Name', 'Birthday', 'Best Hand'])
+    df = df.drop(columns=[
+        'Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures',
+        'First Name', 'Last Name', 'Birthday', 'Best Hand'])
     x = df.drop(columns='Hogwarts House')
     x.fillna(x.mean(), inplace=True) # avoir
     x = x.reindex(sorted(x.columns), axis=1)
@@ -143,7 +149,9 @@ if __name__ == '__main__':
     y = df[['Hogwarts House']]
     houses = df['Hogwarts House'].unique().tolist()
     dd = x.to_dict()
-    stats = {column: preprocessing_feature_scaling(sub_dict) for column, sub_dict in dd.items()}
+    stats = {
+            column: preprocessing_feature_scaling(sub_dict)
+            for column, sub_dict in dd.items()}
     xScaled = feature_scaling(x, stats)
     xScaled = xScaled.to_numpy()
     xScaled = np.insert(xScaled, 0, 1.0, axis=1)
@@ -164,4 +172,4 @@ if __name__ == '__main__':
     std.insert(0, 1)
     results_serialization['mean'] = mean
     results_serialization['std'] = std
-    pd.DataFrame(results_serialization, index=index).to_csv('weight.csv', index_label='Subject')
+    pd.DataFrame(results_serialization, index=index).to_csv('weights.csv', index_label='Subject')
