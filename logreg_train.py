@@ -95,19 +95,19 @@ def cost(theta, xScaled, y_class):
 
 def gradient_descent(x, y, house):
     y_class = y_classification(y, house)
-    theta = np.zeros((1, 11))
+    theta = np.zeros((1, 11)) # 11 a changer par taille
     converge = 10000000
     lRate = 1
     turn = 0
     tmp_cost = 0
     new_cost = 0
     costs = []
-    tmp_cost = float(cost(theta, x, y_class)[0])
+    tmp_cost = cost(theta, x, y_class)[0]
     costs.append(tmp_cost)
     while converge > 0.0001:
         tmp_theta = theta
         theta = theta_calc(tmp_theta, x, y_class, lRate)
-        new_cost = float(cost(theta, x, y_class)[0])
+        new_cost = cost(theta, x, y_class)[0]
         costs.append(new_cost)
         converge = np.abs(tmp_cost - new_cost)
         tmp_cost = new_cost
@@ -134,10 +134,13 @@ def display_results(results, house):
 
 
 if __name__ == '__main__':
-    np.set_printoptions(threshold=np.inf) 
-    pd.set_option('display.expand_frame_repr', False)
+    #np.set_printoptions(threshold=np.inf) 
+    #pd.set_option('display.expand_frame_repr', False)
 
+    # Get Data
     df = get_data(sys.argv)
+
+    # Data Preprocessing
     df = df.drop(columns=[
         'Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures',
         'First Name', 'Last Name', 'Birthday', 'Best Hand'])
@@ -156,10 +159,15 @@ if __name__ == '__main__':
     xScaled = xScaled.to_numpy()
     xScaled = np.insert(xScaled, 0, 1.0, axis=1)
 
+    # Gradient Descent Process
     results = {}
     for house in houses:
         results[house] = gradient_descent(xScaled, y, house)
+
+    # Displaying Results
     display_results(results, houses)
+
+    # Results Generation
     results_serialization = {}
     for house in houses:
         results_serialization[house] = results[house]['theta'].tolist()[0]
