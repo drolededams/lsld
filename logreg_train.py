@@ -53,16 +53,57 @@ def get_data(args):
     return data
 
 
-def y_classification(df, house):
-    df_copy = df.copy()
-    df_copy['Hogwarts House'] = np.where(
-            df_copy['Hogwarts House'] == house, 1, 0)
-    y_class = df_copy['Hogwarts House'].to_numpy()
-    y_class = np.reshape(y_class, (1, np.size(y_class)))
-    return y_class
+def preprocessing(df):
+    # Select Revelant Features
+    droped = [
+        'Index',
+        'Arithmancy',
+        'Potions',
+        'Care of Magical Creatures',
+        'First Name',
+        'Last Name',
+        'Birthday',
+        'Best Hand']
+    df = df.drop(columns=droped)
+
+    # Select x Features
+    x = df.drop(columns='Hogwarts House')
+    x = x.reindex(sorted(x.columns), axis=1)
+
+    # Get Features List
+    index = list(x.columns.values)
+    index.insert(0, 'Theta 0')
+
+    # Get Class list
+    houses = df['Hogwarts House'].unique().tolist()
+
+    # Get Class Values
+    y = df[['Hogwarts House']]
+
+    # Get Features's Stats (mean & std)
+    stats = {
+            column: get_stats(sub_dict)
+            for column, sub_dict in x.to_dict().items()}
+    mean = list()
+    std = list()
+    mean_fill = {}
+    for subject in stats:
+        mean_fill[subject] = stats[subject]['mean']
+        mean.append(stats[subject]['mean'])
+        std.append(stats[subject]['std'])
+    mean.insert(0, 1)
+    std.insert(0, 1)
+
+    # Replace NaN values and Features Scaling
+    x.fillna(mean_fill, inplace=True)
+    xScaled = feature_scaling(x, stats)
+    xScaled = xScaled.to_numpy()
+    xScaled = np.insert(xScaled, 0, 1.0, axis=1)
+
+    return xScaled, y, mean, std, index, houses
 
 
-def preprocessing_feature_scaling(data):
+def get_stats(data):
     clean_data = {k: data[k] for k in data if not np.isnan(data[k])}
     values = np.sort(np.array(list(clean_data.values()), dtype=object))
     count = len(clean_data)
@@ -79,23 +120,16 @@ def feature_scaling(x, stats):
     return x
 
 
-def theta_calc(theta, xScaled, y_class, lRate):
-    hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
-    size = np.size(xScaled, 0)
-    return theta - (lRate / size) * (hypothesis - y_class).dot(xScaled)
-
-
-def cost(theta, xScaled, y_class):
-    hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
-    size = np.size(xScaled, 0)
-    return ((1 / size)
-            * (-1 * y_class.dot(np.transpose(np.log(hypothesis)))
-            - (1 - y_class).dot(np.transpose(np.log(1 - hypothesis)))))
+def gradient_descent_loop(x, y, houses):
+    results = {}
+    for house in houses:
+        results[house] = gradient_descent(x, y, house)
+    return results
 
 
 def gradient_descent(x, y, house):
     y_class = y_classification(y, house)
-    theta = np.zeros((1, 11)) # 11 a changer par taille
+    theta = np.zeros((1, np.size(x, 1)))
     converge = 10000000
     lRate = 1
     turn = 0
@@ -118,6 +152,29 @@ def gradient_descent(x, y, house):
     return results
 
 
+def y_classification(df, house):
+    df_copy = df.copy()
+    df_copy['Hogwarts House'] = np.where(
+            df_copy['Hogwarts House'] == house, 1, 0)
+    y_class = df_copy['Hogwarts House'].to_numpy()
+    y_class = np.reshape(y_class, (1, np.size(y_class)))
+    return y_class
+
+
+def theta_calc(theta, xScaled, y_class, lRate):
+    hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
+    size = np.size(xScaled, 0)
+    return theta - (lRate / size) * (hypothesis - y_class).dot(xScaled)
+
+
+def cost(theta, xScaled, y_class):
+    hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
+    size = np.size(xScaled, 0)
+    return ((1 / size)
+            * (-1 * y_class.dot(np.transpose(np.log(hypothesis)))
+            - (1 - y_class).dot(np.transpose(np.log(1 - hypothesis)))))
+
+
 def display_results(results, house):
     i = 1
     for house in houses:
@@ -128,9 +185,21 @@ def display_results(results, house):
         plt.xlabel('No. of iterations')
         plt.ylabel('Cost Function')
         plt.title(house + "'s Cost Function Evolution")
-        plt.plot(np.arange(results[house]['turn'] + 1), results[house]['costs'])
+        plt.plot(
+                np.arange(results[house]['turn'] + 1),
+                results[house]['costs'])
         i += 1
     plt.show()
+
+
+def results_file(results, houses, index, mean, std):
+    results_serialization = {}
+    for house in houses:
+        results_serialization[house] = results[house]['theta'].tolist()[0]
+    results_serialization['mean'] = mean
+    results_serialization['std'] = std
+    pd.DataFrame(results_serialization, index=index).to_csv(
+            'weights.csv', index_label='Subject')
 
 
 if __name__ == '__main__':
@@ -141,43 +210,13 @@ if __name__ == '__main__':
     df = get_data(sys.argv)
 
     # Data Preprocessing
-    df = df.drop(columns=[
-        'Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures',
-        'First Name', 'Last Name', 'Birthday', 'Best Hand'])
-    x = df.drop(columns='Hogwarts House')
-    x.fillna(x.mean(), inplace=True) # avoir
-    x = x.reindex(sorted(x.columns), axis=1)
-    index = list(x.columns.values)
-    index.insert(0, 'Theta 0')
-    y = df[['Hogwarts House']]
-    houses = df['Hogwarts House'].unique().tolist()
-    dd = x.to_dict()
-    stats = {
-            column: preprocessing_feature_scaling(sub_dict)
-            for column, sub_dict in dd.items()}
-    xScaled = feature_scaling(x, stats)
-    xScaled = xScaled.to_numpy()
-    xScaled = np.insert(xScaled, 0, 1.0, axis=1)
+    x, y, mean, std, index, houses = preprocessing(df)
 
     # Gradient Descent Process
-    results = {}
-    for house in houses:
-        results[house] = gradient_descent(xScaled, y, house)
+    results = gradient_descent_loop(x, y, houses)
 
     # Displaying Results
     display_results(results, houses)
 
     # Results Generation
-    results_serialization = {}
-    for house in houses:
-        results_serialization[house] = results[house]['theta'].tolist()[0]
-    mean = list()
-    std = list()
-    for subject in stats:
-        mean.append(stats[subject]['mean'])
-        std.append(stats[subject]['std'])
-    mean.insert(0, 1)
-    std.insert(0, 1)
-    results_serialization['mean'] = mean
-    results_serialization['std'] = std
-    pd.DataFrame(results_serialization, index=index).to_csv('weights.csv', index_label='Subject')
+    results_file(results, houses, index, mean, std)

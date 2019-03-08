@@ -63,11 +63,57 @@ def get_data(args):
     return dataset, weights
 
 
+def preprocessing(dataset, weights):
+    # Get Thetas & Houses List
+    thetas = weights.drop(columns=['mean', 'std'])
+    houses = list(thetas.columns.values)
+    thetas = thetas.to_numpy()
+
+    # Select Revelant Features
+    droped = [
+        'Index',
+        'Arithmancy',
+        'Potions',
+        'Care of Magical Creatures',
+        'First Name',
+        'Last Name',
+        'Birthday',
+        'Best Hand',
+        'Hogwarts House']
+    x = dataset.drop(columns=droped)
+    x = x.reindex(sorted(x.columns), axis=1)
+
+    # Get Mean & Replace NaN Values
+    mean = weights.drop('Theta 0')['mean']
+    x.fillna(mean, inplace=True)
+
+    # Feature Scaling
+    xScaled = feature_scaling(x, weights)
+    xScaled = xScaled.to_numpy()
+    xScaled = np.insert(xScaled, 0, 1.0, axis=1)
+    return xScaled, thetas, houses
+
+
 def feature_scaling(x, stats):
     subjects = list(x.columns.values)
     for subj in subjects:
         x[subj] = (x[subj] - stats['mean'][subj]) / stats['std'][subj]
     return x
+
+
+def prediction(x, thetas, houses):
+    results = 1 / (1 + np.exp(-1 * x.dot(thetas)))
+    results = results.argmax(axis=1).tolist()
+    for index, v in enumerate(results):
+        results[index] = houses[v]
+    return results
+
+
+def results_generation(results):
+    df = pd.DataFrame(data={
+        "Index": list(range(0, len(results))), "Hogwarts House": results})
+    df.to_csv("./houses.csv", sep=',', index=False)
+    print(df, "\nFull results in houses.csv.")
 
 
 if __name__ == '__main__':
@@ -78,30 +124,13 @@ if __name__ == '__main__':
     dataset, weights = get_data(sys.argv)
 
     # Data Preprocessing
-    thetas = weights.drop(columns=['mean', 'std'])
-    houses = list(thetas.columns.values)
-    x = dataset.drop(columns=[
-        'Index', 'Arithmancy', 'Potions', 'Care of Magical Creatures',
-        'First Name', 'Last Name', 'Birthday', 'Best Hand', 'Hogwarts House'])
-    x = x.reindex(sorted(x.columns), axis=1)
-    mean = weights.drop('Theta 0')['mean']
-    x.fillna(mean, inplace=True)
-    xScaled = feature_scaling(x, weights)
-    xScaled = xScaled.to_numpy()
-    xScaled = np.insert(xScaled, 0, 1.0, axis=1)
-    thetas = thetas.to_numpy()
+    x, thetas, houses = preprocessing(dataset, weights)
 
     # Prediction Processing
-    results = 1 / (1 + np.exp(xScaled.dot(thetas) * -1))
-    results = results.argmax(axis=1).tolist()
-    for index, v in enumerate(results):
-        results[index] = houses[v]
+    results = prediction(x, thetas, houses)
 
     # Results Generation
-    df = pd.DataFrame(data={
-        "Index": list(range(0, len(results))), "Hogwarts House": results})
-    df.to_csv("./houses.csv", sep=',', index=False)
-    print(df, "\nFull results in houses.csv.")
+    results_generation(results)
 
     #df = pd.read_csv('resources/dataset_train.csv')
     #print(accuracy_score(df['Hogwarts House'].tolist(), results))
