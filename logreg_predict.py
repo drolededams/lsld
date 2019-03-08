@@ -44,7 +44,9 @@ def get_data(args):
     dataset_f = "resources/dataset_test.csv"
     weights_f = "weights.csv"
     if len(args) < 3:
-        print("2 arguments needed. Try with \"resources/dataset_test.csv\" and \"weights.csv\".")
+        print(
+                "2 arguments needed. "
+                "Try with \"resources/dataset_test.csv\" and \"weights.csv\".")
     else:
         dataset_f = args[1]
         weights_f = args[2]
@@ -71,15 +73,15 @@ def preprocessing(dataset, weights):
 
     # Select Revelant Features
     droped = [
-        'Index',
-        'Arithmancy',
-        'Potions',
-        'Care of Magical Creatures',
-        'First Name',
-        'Last Name',
-        'Birthday',
-        'Best Hand',
-        'Hogwarts House']
+                'Index',
+                'Arithmancy',
+                'Potions',
+                'Care of Magical Creatures',
+                'First Name',
+                'Last Name',
+                'Birthday',
+                'Best Hand',
+                'Hogwarts House']
     x = dataset.drop(columns=droped)
     x = x.reindex(sorted(x.columns), axis=1)
 
