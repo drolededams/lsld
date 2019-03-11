@@ -123,29 +123,28 @@ def feature_scaling(x, stats):
 def gradient_descent_loop(x, y, houses):
     results = {}
     for house in houses:
-        results[house] = gradient_descent(x, y, house)
+        results[house] = stochastic_gradient_descent(x, y, house)
     return results
 
 
-def gradient_descent(x, y, house):
+def stochastic_gradient_descent(x, y, house):
     y_class = y_classification(y, house)
     theta = np.zeros((1, np.size(x, 1)))
-    converge = 10000000
     lRate = 1
-    turn = 0
+    i = 0
     costs = []
-    tmp_cost = cost(theta, x, y_class)[0]
-    costs.append(tmp_cost)
-    while converge > 0.0001:
+    new_cost = cost(theta, x[0], y_class[0][0])
+    costs.append(new_cost)
+    while i < 300:
         tmp_theta = theta
-        theta = theta_calc(tmp_theta, x, y_class, lRate)
-        new_cost = cost(theta, x, y_class)[0]
+        theta = theta_calc(tmp_theta, x[i], y_class[0][i], lRate)
+        new_cost = cost(theta, x[i], y_class[0][i])
+        new_cost += np.sum(costs)
+        new_cost /= i + 2
         costs.append(new_cost)
-        converge = np.abs(tmp_cost - new_cost)
-        tmp_cost = new_cost
-        turn += 1
+        i += 1
     results = {'theta': theta}
-    results['turn'] = turn
+    results['turn'] = i
     results['costs'] = costs
     return results
 
@@ -162,15 +161,15 @@ def y_classification(df, house):
 def theta_calc(theta, xScaled, y_class, lRate):
     hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
     size = np.size(xScaled, 0)
-    return theta - (lRate / size) * (hypothesis - y_class).dot(xScaled)
+    return theta - (lRate / size) * ((hypothesis - y_class) * (xScaled))
 
 
 def cost(theta, xScaled, y_class):
     hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
     size = np.size(xScaled, 0)
     return ((1 / size)
-            * (-1 * y_class.dot(np.transpose(np.log(hypothesis)))
-            - (1 - y_class).dot(np.transpose(np.log(1 - hypothesis)))))
+            * (-1 * (y_class * np.log(hypothesis))
+            - ((1 - y_class) * (np.log(1 - hypothesis)))))
 
 
 def display_results(results, house):
