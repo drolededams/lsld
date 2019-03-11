@@ -161,14 +161,12 @@ def y_classification(df, house):
 
 def theta_calc(theta, xScaled, y_class, lRate):
     hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
-    size = np.size(xScaled, 0)
-    return theta - (lRate / size) * ((hypothesis - y_class) * (xScaled))
+    return theta - lRate * ((hypothesis - y_class) * (xScaled))
 
 
 def cost(theta, xScaled, y_class):
     hypothesis = 1 / (1 + np.exp(-1 * theta.dot(np.transpose(xScaled))))
-    size = np.size(xScaled, 0)
-    return ((1 / size)
+    return ((1 / 2)
             * (-1 * (y_class * np.log(hypothesis))
             - ((1 - y_class) * (np.log(1 - hypothesis)))))
 
