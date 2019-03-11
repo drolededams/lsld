@@ -132,10 +132,11 @@ def stochastic_gradient_descent(x, y, house):
     theta = np.zeros((1, np.size(x, 1)))
     lRate = 1
     i = 0
+    imax = np.size(x, 0) / 4
     costs = []
     new_cost = cost(theta, x[0], y_class[0][0])
     costs.append(new_cost)
-    while i < 300:
+    while i < imax:
         tmp_theta = theta
         theta = theta_calc(tmp_theta, x[i], y_class[0][i], lRate)
         new_cost = cost(theta, x[i], y_class[0][i])
