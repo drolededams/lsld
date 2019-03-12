@@ -87,6 +87,7 @@ def preprocessing(dataset, weights):
 
     # Get Mean & Replace NaN Values
     mean = weights.drop('Theta 0')['mean']
+    x_corr_fillna(x)
     x.fillna(mean, inplace=True)
 
     # Feature Scaling
@@ -94,6 +95,23 @@ def preprocessing(dataset, weights):
     xScaled = xScaled.to_numpy()
     xScaled = np.insert(xScaled, 0, 1.0, axis=1)
     return xScaled, thetas, houses
+
+
+def x_corr_fillna(x):
+    defense = x['Defense Against the Dark Arts'].index[
+                x['Defense Against the Dark Arts'].apply(np.isnan)].values
+    astro = x['Astronomy'].index[x['Astronomy'].apply(np.isnan)].values
+    i_common = set(astro).intersection(set(defense))
+    astro = list(set(astro).difference(i_common))
+    defense = list(set(defense).difference(i_common))
+    i_notnull = x.dropna().index.values.tolist()[1]
+    coeff = (
+            x['Astronomy'][i_notnull]
+            / x['Defense Against the Dark Arts'][i_notnull])
+    for i in astro:
+        x['Astronomy'][i] = x['Defense Against the Dark Arts'][i] * coeff
+    for i in defense:
+        x['Defense Against the Dark Arts'][i] = x['Astronomy'][i] / coeff
 
 
 def feature_scaling(x, stats):

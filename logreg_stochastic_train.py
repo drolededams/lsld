@@ -95,12 +95,30 @@ def preprocessing(df):
     std.insert(0, 1)
 
     # Replace NaN values and Features Scaling
+    x_corr_fillna(x)
     x.fillna(mean_fill, inplace=True)
     xScaled = feature_scaling(x, stats)
     xScaled = xScaled.to_numpy()
     xScaled = np.insert(xScaled, 0, 1.0, axis=1)
 
     return xScaled, y, mean, std, index, houses
+
+
+def x_corr_fillna(x):
+    defense = x['Defense Against the Dark Arts'].index[
+                x['Defense Against the Dark Arts'].apply(np.isnan)].values
+    astro = x['Astronomy'].index[x['Astronomy'].apply(np.isnan)].values
+    i_common = set(astro).intersection(set(defense))
+    astro = list(set(astro).difference(i_common))
+    defense = list(set(defense).difference(i_common))
+    i_notnull = x.dropna().index.values.tolist()[1]
+    coeff = (
+            x['Astronomy'][i_notnull]
+            / x['Defense Against the Dark Arts'][i_notnull])
+    for i in astro:
+        x['Astronomy'][i] = x['Defense Against the Dark Arts'][i] * coeff
+    for i in defense:
+        x['Defense Against the Dark Arts'][i] = x['Astronomy'][i] / coeff
 
 
 def get_stats(data):
