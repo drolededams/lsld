@@ -189,7 +189,7 @@ def cost(theta, xScaled, y_class):
             - ((1 - y_class) * (np.log(1 - hypothesis)))))
 
 
-def display_results(results, house):
+def display_results(results, houses):
     i = 1
     for house in houses:
         print(house + "'s results:")
@@ -216,7 +216,7 @@ def results_file(results, houses, index, mean, std):
             'weights.csv', index_label='Subject')
 
 
-if __name__ == '__main__':
+def main():
     #np.set_printoptions(threshold=np.inf) 
     #pd.set_option('display.expand_frame_repr', False)
 
@@ -234,3 +234,7 @@ if __name__ == '__main__':
 
     # Results Generation
     results_file(results, houses, index, mean, std)
+
+
+if __name__ == '__main__':
+    main()

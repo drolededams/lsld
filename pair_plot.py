@@ -20,7 +20,7 @@ def get_data(args):
     return data
 
 
-if __name__ == '__main__':
+def main():
     df = get_data(sys.argv)
     df = df.reindex(sorted(df.columns), axis=1)
     sns.set(font_scale=0.5)
@@ -31,3 +31,7 @@ if __name__ == '__main__':
                     aspect=1)
     plt.subplots_adjust(left=0.04, bottom=0.04)
     plt.show()
+
+
+if __name__ == '__main__':
+    main()

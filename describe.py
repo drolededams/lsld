@@ -82,7 +82,11 @@ def display_stats(stats):
     print(res)
 
 
-if __name__ == '__main__':
+def main():
     df = get_data(sys.argv)
     stats = get_stats(df)
     display_stats(stats)
+
+
+if __name__ == '__main__':
+    main()

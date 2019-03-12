@@ -136,7 +136,7 @@ def results_generation(results):
     print(df, "\nFull results in houses.csv.")
 
 
-if __name__ == '__main__':
+def main():
     #np.set_printoptions(threshold=np.inf) 
     #pd.set_option('display.expand_frame_repr', False)
 
@@ -154,3 +154,7 @@ if __name__ == '__main__':
 
     #df = pd.read_csv('resources/dataset_train.csv')
     #print(accuracy_score(df['Hogwarts House'].tolist(), results))
+
+
+if __name__ == '__main__':
+    main()

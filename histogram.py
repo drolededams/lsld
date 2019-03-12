@@ -79,8 +79,12 @@ def select_features(df):
     return houses, subjects
 
 
-if __name__ == '__main__':
+def main():
     df = get_data(sys.argv)
     houses, subjects = select_features(df)
     manual_selection(df, houses)
     auto_selection(df, houses, subjects)
+
+
+if __name__ == '__main__':
+    main()

@@ -66,10 +66,14 @@ def auto_selection(df, houses, colors, absolute=False):
     ax.legend()
 
 
-if __name__ == '__main__':
+def main():
     df = get_data(sys.argv)
     houses, colors = var_init(df)
     manual_selection(df, houses, colors)
     auto_selection(df, houses, colors)
     auto_selection(df, houses, colors, absolute=True)
     plt.show()
+
+
+if __name__ == '__main__':
+    main()
